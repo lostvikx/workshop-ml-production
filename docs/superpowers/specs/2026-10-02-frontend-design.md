@@ -1,7 +1,7 @@
 # Frontend design: single-page sentiment form
 
 Date: 2026-10-02
-Status: awaiting review
+Status: implemented
 
 ## Goal
 

@@ -1,4 +1,11 @@
-"""FastAPI service exposing the IMDB sentiment classifier."""
+"""FastAPI service exposing the IMDB sentiment classifier.
+
+Run from the repository root: ``uv run fastapi dev main.py``.
+
+Only ``model.predict`` is imported. ``model.train`` reads the 64 MB dataset at
+module level, so importing it here would cost seconds and a large allocation on
+every worker start.
+"""
 
 from pathlib import Path
 from typing import Literal
@@ -7,18 +14,22 @@ import joblib
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
+# `model.predict` is a namespace-package import and resolves against the
+# directory the server was launched from.
+from model.predict import load_model, predict_sentiment
+
 MODEL_PATH = Path("model/imdb_clf.joblib")
 
 SERVICE_NAME = "imdb-sentiment-api"
 SERVICE_VERSION = "0.1.0"
 
-LABELS = {0: "negative", 1: "positive"}
+TRAIN_COMMAND = "uv run model/train.py"
 
 app = FastAPI(title=SERVICE_NAME, version=SERVICE_VERSION)
 
 # Loaded on first use and reused after that. Not process-safe across workers;
 # each worker process keeps its own cache and pays the load once.
-_model: object | None = None
+_model = None
 
 
 class ReviewIn(BaseModel):
@@ -34,7 +45,7 @@ class ReviewIn(BaseModel):
 
 
 class PredictionOut(BaseModel):
-    label: Literal["positive", "negative"]
+    label: Literal["Positive", "Negative"]
     prediction: int
     confidence: float
 
@@ -44,24 +55,20 @@ def get_model():
     global _model
     if _model is None:
         try:
-            _model = joblib.load(MODEL_PATH)
+            _model = load_model(MODEL_PATH)
         except FileNotFoundError as exc:
             raise HTTPException(
                 status_code=503,
-                detail=f"Model not found at {MODEL_PATH}. Run notebook.py to train it.",
+                detail=f"Model not found at {MODEL_PATH}. Run `{TRAIN_COMMAND}` to train it.",
             ) from exc
+        except HTTPException:
+            raise
         except Exception as exc:
             raise HTTPException(
                 status_code=503,
                 detail=f"Failed to load model from {MODEL_PATH}: {exc}",
             ) from exc
     return _model
-
-
-def _predict_one(model, review: str) -> tuple[int, float]:
-    prediction = int(model.predict([review])[0])
-    confidence = float(max(model.predict_proba([review])[0]))
-    return prediction, confidence
 
 
 @app.get("/")
@@ -80,10 +87,9 @@ def read_health() -> dict:
 
 @app.post("/predict", response_model=PredictionOut)
 def predict(payload: ReviewIn) -> PredictionOut:
-    model = get_model()
-    prediction, confidence = _predict_one(model, payload.review)
+    result = predict_sentiment(payload.review, get_model())
     return PredictionOut(
-        label=LABELS[prediction],
-        prediction=prediction,
-        confidence=round(confidence, 4),
+        label=result["label"],
+        prediction=result["prediction"],
+        confidence=round(result["confidence"], 4),
     )

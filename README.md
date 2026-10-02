@@ -101,7 +101,7 @@ present (the app boots regardless — run `uv run model/train.py`).
 2. **Clean** — drop duplicate rows, fill null reviews, drop empty/whitespace
    reviews.
 3. **Encode labels** — `negative → 0`, `positive → 1`.
-4. **Split** — stratified 80/20 train/test split.
+4. **Split** — stratified 80/20 train/test split, `random_state=42`.
 5. **Vectorize** — `TfidfVectorizer(lowercase, stop_words="english",
 ngram_range=(1, 2), min_df=2, max_df=0.95, sublinear_tf)`.
 6. **Classify** — `LogisticRegression(max_iter=1000, class_weight="balanced",
@@ -123,11 +123,12 @@ notebook.py   dataset exploration prototype, not needed to run or serve
 
 ## Notes
 
-- **Retraining is not reproducible.** `train_test_split` is called without a
-  `random_state`, so each run trains on a different 80/20 split and produces a
-  different model. `random_state=42` only pins the classifier. Retraining
-  overwrites the committed `.joblib`, which is why a re-run and the committed
-  artifact can disagree on confidence.
+- **Retraining is reproducible, the artifact bytes are not.** `train_test_split`
+  takes `random_state=42`, so a re-run trains on the same split and produces the
+  same vocabulary, coefficients, and predictions. The `.joblib` file will still
+  differ byte-for-byte between runs, because a `set` inside the pipeline is
+  pickled in hash order and Python randomizes string hashing per process.
+  Compare predictions, not file hashes.
 - `model/imdb_clf.joblib` is committed so a fresh clone can serve without the
   64 MB dataset. Loading it requires the same scikit-learn version it was
   trained with; `uv.lock` pins `scikit-learn==1.9.1`, so keep the two in step.

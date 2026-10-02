@@ -97,9 +97,9 @@ present (the app boots regardless — run `uv run model/train.py`).
 
 ## Frontend
 
-`app/index.html` is a single file — markup, styles, and script together. No
-framework, no build step, no `node_modules`. FastAPI serves it as static files
-and mounts it after the API routes, so `/predict` still resolves to the
+Three files under `app/`: `index.html` for markup, `style.css`, and `app.js`.
+No framework, no build step, no `node_modules`. FastAPI serves them as static
+files and mounts them after the API routes, so `/predict` still resolves to the
 endpoint.
 
 The page has a review form, two sample reviews to fill it, a verdict with a
@@ -134,7 +134,7 @@ this reason.
 ```
 dataset/   IMDB CSV (gitignored, download from Kaggle)
 model/     train.py, predict.py, imdb_clf.joblib (committed)
-app/       index.html — the single-page frontend
+app/       index.html, style.css, app.js — the frontend
 main.py
 notebook.py   dataset exploration prototype, not needed to run or serve
 ```

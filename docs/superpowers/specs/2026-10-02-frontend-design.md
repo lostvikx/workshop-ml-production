@@ -16,7 +16,10 @@ either collects the review or reports the result.
 
 ## Stack and serving
 
-- `app/index.html` — markup, `<style>`, and `<script>` in one file.
+- `app/index.html` — markup only.
+- `app/style.css` — styles.
+- `app/app.js` — behaviour, wrapped in an IIFE so its names stay out of the
+  global scope. Loaded with `defer`, so the DOM is ready when it runs.
 - Served by `main.py` via `StaticFiles(html=True)`, mounted at `/`.
 - Same-origin `POST /predict`. No CORS, no dev server, no proxy.
 
@@ -108,5 +111,7 @@ frontend build tooling, and tests beyond a manual pass of each state.
 ## Files touched
 
 - `app/index.html` — new
+- `app/style.css` — new
+- `app/app.js` — new
 - `main.py` — mount static files, move `GET /` to `GET /info`
 - `README.md` — document the page and the route change

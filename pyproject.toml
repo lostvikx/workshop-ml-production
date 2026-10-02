@@ -5,8 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi[standard]>=0.142.2",
     "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
     "scikit-learn>=1.9.1",
     "seaborn>=0.13.2",
+    "uvicorn[standard]>=0.54.0",
 ]

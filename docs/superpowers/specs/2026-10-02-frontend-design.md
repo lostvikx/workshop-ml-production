@@ -46,7 +46,8 @@ probability, 4 decimal places, already rounded server-side.
 
 Single column, max ~640px, centred.
 
-1. **Title block** — page title and one line of purpose.
+1. **Title block** — the heading "Imdb Movie Review - Sentiment Prediction",
+   set at 2rem in sentence case, and one line of purpose.
 2. **Sample reviews** — two buttons, one clearly positive and one clearly
    negative, drawn from the IMDB domain. Clicking fills the textarea. They
    exist so the page is testable without typing.
@@ -82,8 +83,13 @@ Errors state what went wrong and what to do, and do not apologize.
 | --------- | --------- | ------------------------------------------ |
 | ground    | `#E4E7EC` | page background                             |
 | ink       | `#1A1D23` | text                                        |
-| positive  | `#C2703A` | amber, Positive label and bar fill          |
-| negative  | `#3F5E8C` | cool slate blue, Negative label and bar fill |
+| positive  | `#1F6B45` | green, Positive label and bar fill          |
+| negative  | `#A32E28` | red, Negative label and bar fill            |
+
+Positive is green and Negative is red — the conventional mapping, which reads
+faster than the original amber/slate pairing. Both clear WCAG AA against the
+ground (5.2:1 and 5.7:1), so they also work at the smaller size used in the
+recent-predictions list.
 
 Type: a grotesque for the verdict word and percentages, system sans for the
 form. Weight and spacing do the work; no decorative flourishes.

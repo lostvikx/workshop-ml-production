@@ -1,4 +1,4 @@
-# workshop-ml-production
+# Workshop: ML in Production
 
 Sentiment classification on the [IMDB 50k movie reviews][kaggle] dataset, built
 as a production-style pipeline: a scikit-learn `Pipeline` trained in a
@@ -9,9 +9,7 @@ notebook, serialized with `joblib`, and reloaded for inference.
 [IMDB Dataset of 50k Movie Reviews][kaggle] — 50,000 labelled reviews with
 columns `review` and `sentiment` (`positive` / `negative`).
 
-Download it from Kaggle (free account required):
-
-[kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews][kaggle]
+Download it from Kaggle (free account required)
 
 Place the CSV at:
 
@@ -62,11 +60,11 @@ uv run uvicorn main:app             # production ASGI server
 
 Interactive docs at <http://localhost:8000/docs>.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/` | Service name, version, model path |
-| `GET` | `/health` | Liveness, and whether the model is loaded |
-| `POST` | `/predict` | Sentiment for a single review |
+| Method | Path       | Purpose                                   |
+| ------ | ---------- | ----------------------------------------- |
+| `GET`  | `/`        | Service name, version, model path         |
+| `GET`  | `/health`  | Liveness, and whether the model is loaded |
+| `POST` | `/predict` | Sentiment for a single review             |
 
 ```bash
 curl -X POST localhost:8000/predict \
@@ -75,7 +73,7 @@ curl -X POST localhost:8000/predict \
 ```
 
 ```json
-{"label":"positive","prediction":1,"confidence":0.7392}
+{ "label": "positive", "prediction": 1, "confidence": 0.7392 }
 ```
 
 Status codes: `422` for a blank or missing `review`, `503` when no model is
@@ -92,9 +90,9 @@ present (the app boots regardless — run the notebook first).
 4. **Encode labels** — `negative → 0`, `positive → 1`.
 5. **Split** — stratified 80/20 train/test split.
 6. **Vectorize** — `TfidfVectorizer(lowercase, stop_words="english",
-   ngram_range=(1, 2), min_df=2, max_df=0.95, sublinear_tf)`.
+ngram_range=(1, 2), min_df=2, max_df=0.95, sublinear_tf)`.
 7. **Classify** — `LogisticRegression(max_iter=1000, class_weight="balanced",
-   random_state=42)`, chained to the vectorizer in a `Pipeline`.
+random_state=42)`, chained to the vectorizer in a `Pipeline`.
 8. **Evaluate** — train/test accuracy, classification report, confusion matrix
    heatmap.
 9. **Persist** — `joblib.dump` to `model/imdb_clf.joblib`, then reload and

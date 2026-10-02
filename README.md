@@ -46,6 +46,41 @@ runs top-to-bottom as a plain script:
 uv run python notebook.py
 ```
 
+This writes `model/imdb_clf.joblib`, which the API loads. The directory is
+gitignored, so train the model once per clone before serving.
+
+## Serve
+
+`main.py` exposes the trained pipeline over HTTP. The model is loaded lazily on
+the first `/predict` call and cached after that, so the app starts even with no
+model on disk.
+
+```bash
+uv run fastapi dev main.py          # dev server, with auto-reload
+uv run uvicorn main:app             # production ASGI server
+```
+
+Interactive docs at <http://localhost:8000/docs>.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/` | Service name, version, model path |
+| `GET` | `/health` | Liveness, and whether the model is loaded |
+| `POST` | `/predict` | Sentiment for a single review |
+
+```bash
+curl -X POST localhost:8000/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"review":"The Intern is a sweet, heartwarming comedy."}'
+```
+
+```json
+{"label":"positive","prediction":1,"confidence":0.7392}
+```
+
+Status codes: `422` for a blank or missing `review`, `503` when no model is
+present (the app boots regardless — run the notebook first).
+
 ## Pipeline
 
 `notebook.py` runs these steps in order:
@@ -80,6 +115,9 @@ main.py
 - `model/imdb_clf.joblib` is a gitignored build artifact — rerun the notebook
   to regenerate it. Loading it requires the same scikit-learn version used to
   train it; check `uv.lock` if a load fails with a version warning.
+- The lazy model cache is per-process, so each uvicorn worker loads the model
+  once on its own. A readiness probe that only hits `/health` reports `ok`
+  before the model is in memory.
 
 ## License
 

@@ -58,13 +58,11 @@ The review is the one required positional argument.
 
 ## Serve
 
-`main.py` exposes the trained pipeline over HTTP, importing
-`load_model` and `predict_sentiment` from `model/predict.py` so the API and the
-CLI share one inference path. The model is loaded lazily on the first
-`/predict` call and cached after that, so the app starts even with no model on
-disk.
+`main.py` serves both the API and a single-page frontend at
+<http://localhost:8000>. The model is loaded lazily on the first `/predict`
+call and cached after that, so the app starts even with no model on disk.
 
-Run both commands **from the repository root** — `model` is resolved as a
+Run the command **from the repository root** — `model` is resolved as a
 namespace package relative to the working directory.
 
 ```bash
@@ -72,13 +70,17 @@ uv run fastapi dev main.py          # dev server, with auto-reload
 uv run uvicorn main:app             # production ASGI server
 ```
 
-Interactive docs at <http://localhost:8000/docs>.
+Interactive API docs at <http://localhost:8000/docs>.
 
 | Method | Path       | Purpose                                   |
 | ------ | ---------- | ----------------------------------------- |
-| `GET`  | `/`        | Service name, version, model path         |
+| `GET`  | `/`        | The web page (`app/index.html`)           |
+| `GET`  | `/info`    | Service name, version, model path         |
 | `GET`  | `/health`  | Liveness, and whether the model is loaded |
 | `POST` | `/predict` | Sentiment for a single review             |
+
+> `GET /` used to return the service metadata as JSON. The page now owns that
+> path; the metadata moved to `GET /info`.
 
 ```bash
 curl -X POST localhost:8000/predict \
@@ -92,6 +94,21 @@ curl -X POST localhost:8000/predict \
 
 Status codes: `422` for a blank or missing `review`, `503` when no model is
 present (the app boots regardless — run `uv run model/train.py`).
+
+## Frontend
+
+`app/index.html` is a single file — markup, styles, and script together. No
+framework, no build step, no `node_modules`. FastAPI serves it as static files
+and mounts it after the API routes, so `/predict` still resolves to the
+endpoint.
+
+The page has a review form, two sample reviews to fill it, a verdict with a
+confidence bar, and the last 5 predictions for the session. It calls
+`POST /predict` same-origin, so there is no CORS setup.
+
+Three error states are handled, all reachable against the real API: a blank
+review (`422`), no model loaded (`503`), and the service being down (network
+failure).
 
 ## Pipeline
 
@@ -117,6 +134,7 @@ this reason.
 ```
 dataset/   IMDB CSV (gitignored, download from Kaggle)
 model/     train.py, predict.py, imdb_clf.joblib (committed)
+app/       index.html — the single-page frontend
 main.py
 notebook.py   dataset exploration prototype, not needed to run or serve
 ```

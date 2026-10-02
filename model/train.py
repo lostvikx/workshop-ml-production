@@ -16,7 +16,9 @@ df["sentiment"] = df["sentiment"].map({"negative": 0, "positive": 1})
 x = df["review"]
 y = df["sentiment"]
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, stratify=y)
+x_train, x_test, y_train, y_test = train_test_split(
+    x, y, test_size=0.2, stratify=y, random_state=42
+)
 
 model_pipe = Pipeline(
     [

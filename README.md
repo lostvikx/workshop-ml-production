@@ -1,8 +1,9 @@
 # Workshop: ML in Production
 
 Sentiment classification on the [IMDB 50k movie reviews][kaggle] dataset, built
-as a production-style pipeline: a scikit-learn `Pipeline` trained in a
-notebook, serialized with `joblib`, and reloaded for inference.
+as a production-style pipeline: a scikit-learn `Pipeline` trained from a script,
+serialized with `joblib`, served over a FastAPI endpoint, and callable from the
+command line.
 
 ## Dataset
 
@@ -31,27 +32,40 @@ uv sync
 This creates `.venv` and installs the pinned dependencies from `uv.lock`
 (Python 3.13).
 
-## Run
+## Train
+
+A trained model is committed at `model/imdb_clf.joblib`, so the API and CLI work
+straight after clone. Retrain with:
 
 ```bash
-uv run jupyter lab notebook.py
+uv run model/train.py
 ```
 
-`notebook.py` is a percent-format notebook, so it opens as a notebook and also
-runs top-to-bottom as a plain script:
+Takes about 25 seconds and overwrites the model in place. It reads the dataset,
+so the Kaggle CSV has to be in `dataset/` first.
+
+## Predict from the CLI
 
 ```bash
-uv run python notebook.py
+uv run model/predict.py 'The Intern is a sweet, heartwarming comedy.'
 ```
 
-This writes `model/imdb_clf.joblib`, which the API loads. The directory is
-gitignored, so train the model once per clone before serving.
+```text
+{'label': 'Positive', 'prediction': np.int64(1), 'confidence': np.float64(0.7412472650298687)}
+```
+
+The review is the one required positional argument.
 
 ## Serve
 
-`main.py` exposes the trained pipeline over HTTP. The model is loaded lazily on
-the first `/predict` call and cached after that, so the app starts even with no
-model on disk.
+`main.py` exposes the trained pipeline over HTTP, importing
+`load_model` and `predict_sentiment` from `model/predict.py` so the API and the
+CLI share one inference path. The model is loaded lazily on the first
+`/predict` call and cached after that, so the app starts even with no model on
+disk.
+
+Run both commands **from the repository root** — `model` is resolved as a
+namespace package relative to the working directory.
 
 ```bash
 uv run fastapi dev main.py          # dev server, with auto-reload
@@ -73,46 +87,52 @@ curl -X POST localhost:8000/predict \
 ```
 
 ```json
-{ "label": "positive", "prediction": 1, "confidence": 0.7392 }
+{ "label": "Positive", "prediction": 1, "confidence": 0.7412 }
 ```
 
 Status codes: `422` for a blank or missing `review`, `503` when no model is
-present (the app boots regardless — run the notebook first).
+present (the app boots regardless — run `uv run model/train.py`).
 
 ## Pipeline
 
-`notebook.py` runs these steps in order:
+`model/train.py` builds and fits the pipeline in these steps:
 
-1. **Load and inspect** — shape, columns, nulls, duplicate count.
+1. **Load** — read the CSV.
 2. **Clean** — drop duplicate rows, fill null reviews, drop empty/whitespace
-   reviews, keep only `review` and `sentiment`.
-3. **Explore** — sentiment class distribution.
-4. **Encode labels** — `negative → 0`, `positive → 1`.
-5. **Split** — stratified 80/20 train/test split.
-6. **Vectorize** — `TfidfVectorizer(lowercase, stop_words="english",
+   reviews.
+3. **Encode labels** — `negative → 0`, `positive → 1`.
+4. **Split** — stratified 80/20 train/test split.
+5. **Vectorize** — `TfidfVectorizer(lowercase, stop_words="english",
 ngram_range=(1, 2), min_df=2, max_df=0.95, sublinear_tf)`.
-7. **Classify** — `LogisticRegression(max_iter=1000, class_weight="balanced",
+6. **Classify** — `LogisticRegression(max_iter=1000, class_weight="balanced",
 random_state=42)`, chained to the vectorizer in a `Pipeline`.
-8. **Evaluate** — train/test accuracy, classification report, confusion matrix
-   heatmap.
-9. **Persist** — `joblib.dump` to `model/imdb_clf.joblib`, then reload and
-   predict to confirm the roundtrip.
+7. **Persist** — `joblib.dump` to `model/imdb_clf.joblib`.
+
+Steps 1-4 run at import time, outside the `__main__` guard, so they execute
+whenever `model.train` is imported. The API imports only `model.predict` for
+this reason.
 
 ## Layout
 
 ```
 dataset/   IMDB CSV (gitignored, download from Kaggle)
-model/     trained pipeline, imdb_clf.joblib (gitignored, regenerate)
-notebook.py
+model/     train.py, predict.py, imdb_clf.joblib (committed)
 main.py
+notebook.py   dataset exploration prototype, not needed to run or serve
 ```
 
 ## Notes
 
-- `random_state=42` and the stratified split make runs reproducible.
-- `model/imdb_clf.joblib` is a gitignored build artifact — rerun the notebook
-  to regenerate it. Loading it requires the same scikit-learn version used to
-  train it; check `uv.lock` if a load fails with a version warning.
+- **Retraining is not reproducible.** `train_test_split` is called without a
+  `random_state`, so each run trains on a different 80/20 split and produces a
+  different model. `random_state=42` only pins the classifier. Retraining
+  overwrites the committed `.joblib`, which is why a re-run and the committed
+  artifact can disagree on confidence.
+- `model/imdb_clf.joblib` is committed so a fresh clone can serve without the
+  64 MB dataset. Loading it requires the same scikit-learn version it was
+  trained with; `uv.lock` pins `scikit-learn==1.9.1`, so keep the two in step.
+  If a load fails with a version warning, retrain rather than trying to load an
+  incompatible artifact.
 - The lazy model cache is per-process, so each uvicorn worker loads the model
   once on its own. A readiness probe that only hits `/health` reports `ok`
   before the model is in memory.

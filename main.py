@@ -12,6 +12,7 @@ from typing import Literal
 
 import joblib
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 # `model.predict` is a namespace-package import and resolves against the
@@ -19,6 +20,8 @@ from pydantic import BaseModel, Field, field_validator
 from model.predict import load_model, predict_sentiment
 
 MODEL_PATH = Path("model/imdb_clf.joblib")
+
+APP_DIR = Path(__file__).parent / "app"
 
 SERVICE_NAME = "imdb-sentiment-api"
 SERVICE_VERSION = "0.1.0"
@@ -71,8 +74,8 @@ def get_model():
     return _model
 
 
-@app.get("/")
-def read_root() -> dict:
+@app.get("/info")
+def read_info() -> dict:
     return {
         "service": SERVICE_NAME,
         "version": SERVICE_VERSION,
@@ -93,3 +96,8 @@ def predict(payload: ReviewIn) -> PredictionOut:
         prediction=result["prediction"],
         confidence=round(result["confidence"], 4),
     )
+
+
+# Mounted last so the API routes above win the match. Serves app/index.html
+# at /.
+app.mount("/", StaticFiles(directory=APP_DIR, html=True), name="ui")

@@ -87,7 +87,7 @@ curl -X POST localhost:8000/predict \
 ```
 
 ```json
-{ "label": "Positive", "prediction": 1, "confidence": 0.7412 }
+{ "label": "Positive", "prediction": 1, "confidence": 0.7746 }
 ```
 
 Status codes: `422` for a blank or missing `review`, `503` when no model is

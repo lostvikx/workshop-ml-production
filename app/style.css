@@ -1,0 +1,255 @@
+:root {
+    --ground: #e4e7ec;
+    --ink: #1a1d23;
+    --positive: #1f6b45;
+    --negative: #a32e28;
+    --rule: #c3c9d2;
+    --muted: #5c6472;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+    background: var(--ground);
+    color: var(--ink);
+    font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+main {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    margin: 0 0 0.5rem;
+}
+
+.lede {
+    margin: 0 0 2.25rem;
+    color: var(--muted);
+    max-width: 44ch;
+}
+
+.samples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: baseline;
+    margin-bottom: 0.85rem;
+}
+
+.samples-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.samples button {
+    font: inherit;
+    font-size: 0.85rem;
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink);
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+}
+
+.samples button:hover {
+    border-color: var(--muted);
+}
+
+textarea {
+    display: block;
+    width: 100%;
+    min-height: 7.5rem;
+    padding: 0.85rem 1rem;
+    background: #f2f4f7;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink);
+    font: inherit;
+    resize: vertical;
+}
+
+textarea::placeholder {
+    color: #9aa2b0;
+}
+
+textarea:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+}
+
+.actions {
+    margin-top: 0.85rem;
+}
+
+#submit {
+    font: inherit;
+    font-weight: 600;
+    background: var(--ink);
+    color: #f2f4f7;
+    border: 0;
+    border-radius: 2px;
+    padding: 0.6rem 1.4rem;
+    cursor: pointer;
+}
+
+#submit[disabled] {
+    background: var(--muted);
+    cursor: progress;
+}
+
+#error {
+    margin: 0.85rem 0 0;
+    color: #8a3a2c;
+    font-size: 0.9rem;
+}
+
+#error:empty {
+    display: none;
+}
+
+.verdict {
+    margin-top: 2.75rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+}
+
+.verdict[hidden],
+#recent[hidden] {
+    display: none;
+}
+
+.verdict-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 2.4rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.verdict-label[data-label="Positive"] {
+    color: var(--positive);
+}
+
+.verdict-label[data-label="Negative"] {
+    color: var(--negative);
+}
+
+.confidence {
+    font-size: 1.05rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+
+.bar {
+    margin-top: 0.9rem;
+    height: 6px;
+    background: #cfd5de;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    transition: width 320ms ease-out;
+}
+
+.bar[data-label="Positive"] span {
+    background: var(--positive);
+}
+
+.bar[data-label="Negative"] span {
+    background: var(--negative);
+}
+
+#recent {
+    margin-top: 3rem;
+}
+
+#recent h2 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+}
+
+#recent ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+}
+
+#recent li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.92rem;
+}
+
+#recent .snippet {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#recent .tag {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+#recent .tag[data-label="Positive"] {
+    color: var(--positive);
+}
+
+#recent .tag[data-label="Negative"] {
+    color: var(--negative);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bar span {
+        transition: none;
+    }
+}
+
+@media (max-width: 30rem) {
+    body {
+        padding-top: 2rem;
+    }
+
+    .verdict-label {
+        font-size: 1.8rem;
+    }
+}

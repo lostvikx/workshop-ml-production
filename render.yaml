@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: imdb-sentiment
+    runtime: python
+    plan: free
+    buildCommand: uv sync --frozen --no-dev
+    startCommand: uv run uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit

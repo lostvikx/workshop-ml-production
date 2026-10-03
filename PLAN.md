@@ -90,8 +90,11 @@ Field notes, against the Blueprint spec:
   different versions. `--no-dev` keeps the image smaller.
 - `startCommand` — `$PORT` is set by Render and defaults to `10000`. The
   `--host 0.0.0.0` is mandatory; Render cannot route to a loopback-bound server.
-- `healthCheckPath` — defaults to a TCP probe if omitted. We want the HTTP probe
-  so a broken app fails the deploy instead of passing on an open port.
+- `healthCheckPath` — defaults to a TCP probe if omitted, and TCP probes
+  cannot be disabled. Keeping the HTTP probe is the app-level check: a TCP
+  probe passes for an app that binds the port but fails every request, whereas
+  `/health` returning 200 means the app is genuinely serving. It costs no
+  free-tier hours either way.
 - `autoDeployTrigger: commit` — replaces the deprecated `autoDeploy` field.
 
 Commit and push:
@@ -144,9 +147,18 @@ Then open the URL in a browser and submit a review through the form.
 - **Ephemeral filesystem.** Nothing is lost, because the model comes from the
   repo image rather than being written at runtime.
 - **No scaling, no persistent disk, no SSH.** Not needed here.
-- **Unknown:** whether Render's own health-check traffic keeps a free service
-  awake. The docs do not say. If the service seems to sleep sooner than 15
-  minutes, that is the reason, and there is nothing to configure.
+- **Health checks are not what keeps it awake, and cost no hours.** Worth
+  stating because both are commonly assumed otherwise:
+  - Free instance hours are consumed by *running time*, not request volume —
+    Render bills hours "as long as it's running (spun-down services don't
+    consume Free instance hours)". Probing an already-running instance every
+    few seconds adds nothing meaningful.
+  - Render documents 15-minute spin-down *while* running those probes. If they
+    counted as inbound traffic, free services would never sleep. They don't.
+    Preventing spin-down requires an external pinger, which this app
+    deliberately does not have — sleeping is what keeps it inside 750 hours.
+  - Health checks cannot be disabled at all. Omitting `healthCheckPath` only
+    downgrades them to the default TCP socket probe, on the same schedule.
 
 For a demo or workshop link this is fine. If it must be reliably reachable,
 change `plan: free` to a paid plan — that is the only line that changes.

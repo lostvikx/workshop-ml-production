@@ -19,7 +19,9 @@ from pydantic import BaseModel, Field, field_validator
 # directory the server was launched from.
 from model.predict import load_model, predict_sentiment
 
-MODEL_PATH = Path("model/imdb_clf.joblib")
+# Resolved from __file__ so the app works from any working directory, which
+# is what a deploy's start command gives us.
+MODEL_PATH = Path(__file__).parent / "model/imdb_clf.joblib"
 
 APP_DIR = Path(__file__).parent / "app"
 
